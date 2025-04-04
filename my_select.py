@@ -67,3 +67,32 @@ def select_10(student_id=1, teacher_id=1):
         Grade.student_id == student_id,
         Subject.teacher_id == teacher_id
     ).distinct().all()
+
+# Extra 1. Середній бал, який певний викладач ставить певному студенту
+def select_extra_1(student_id=1, teacher_id=1):
+    return session.query(
+        func.round(func.avg(Grade.grade).cast(Numeric), 2)
+    ).select_from(Grade).join(Subject).filter(
+        Grade.student_id == student_id,
+        Subject.teacher_id == teacher_id
+    ).scalar()
+
+
+# Extra 2. Оцінки студентів у певній групі з певного предмета на останньому занятті
+def select_extra_2(group_id=1, subject_id=1):
+    subquery = session.query(
+        func.max(Grade.date_of)
+    ).join(Student).filter(
+        Student.group_id == group_id,
+        Grade.subject_id == subject_id
+    ).scalar_subquery()
+
+    return session.query(
+        Student.name,
+        Grade.grade,
+        Grade.date_of
+    ).join(Grade).filter(
+        Student.group_id == group_id,
+        Grade.subject_id == subject_id,
+        Grade.date_of == subquery
+    ).all()
